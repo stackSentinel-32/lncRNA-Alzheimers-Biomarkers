@@ -1,0 +1,68 @@
+{
+  "nodes_count": 62,
+  "edges_count": 54,
+  "density": 0.028556319407720784,
+  "is_connected": false,
+  "connected_components": 8,
+  "average_clustering": 0.0,
+  "lncrna_nodes": 9,
+  "mrna_nodes": 53,
+  "top_degree_hubs": [
+    {
+      "symbol": "ANXA2R-AS1",
+      "node_type": "lncRNA",
+      "degree": 6,
+      "strength": 4.672312891396741,
+      "module": "Vesicle Trafficking"
+    },
+    {
+      "symbol": "GIHCG",
+      "node_type": "lncRNA",
+      "degree": 6,
+      "strength": 5.08244162815959,
+      "module": "Mitochondrial Respiration"
+    },
+    {
+      "symbol": "OIP5-AS1",
+      "node_type": "lncRNA",
+      "degree": 6,
+      "strength": 5.151678077626162,
+      "module": "Ubiquitination / Neuroprotection"
+    },
+    {
+      "symbol": "PCED1B-AS1",
+      "node_type": "lncRNA",
+      "degree": 6,
+      "strength": 4.503569947976976,
+      "module": "Innate Immune / Microglia"
+    },
+    {
+      "symbol": "LY86-AS1",
+      "node_type": "lncRNA",
+      "degree": 6,
+      "strength": 5.030213485816179,
+      "module": "Synaptic Transmission"
+    },
+    {
+      "symbol": "PEG13",
+      "node_type": "lncRNA",
+      "degree": 6,
+      "strength": 5.317834007929962,
+      "module": "Synaptic / Calcium Signaling"
+    },
+    {
+      "symbol": "SMARCA5-AS1",
+      "node_type": "lncRNA",
+      "degree": 6,
+      "strength": 5.180462922105612,
+      "module": "Mitochondrial Respiration"
+    },
+    {
+      "symbol": "ZFAS1",
+      "node_type": "lncRNA",
+      "degree": 6,
+      "strength": 5.076127933751705,
+      "module": "Translation / Ribosome"
+    }
+  ]
+}

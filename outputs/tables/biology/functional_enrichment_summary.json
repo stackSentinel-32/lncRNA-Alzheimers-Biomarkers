@@ -1,0 +1,56 @@
+{
+  "stage": "Stage 13 - Functional Enrichment and Biological Interpretation",
+  "background_universe": {
+    "source": "GSE125583 fusiform gyrus measurable protein-coding genes",
+    "file": "outputs\\tables\\stage12\\enrichment_background.csv",
+    "universe_size": 16799,
+    "sha256": "85f7ede7068e0e033ddf661dbfe98d8fa9811e62600eefee1b82a7b01580d8cf"
+  },
+  "foregrounds": {
+    "source": "GSE125583 co-expression pairs (|r| >= 0.75 in both primary and sensitivity fits, q < 0.05)",
+    "file": "outputs\\tables\\stage12\\enrichment_foreground.csv.gz",
+    "memberships": 88089,
+    "distinct_lncrnas": 623,
+    "sha256": "da7ed0b0cadfe7a792789debcecf729afb6a72180f65f9014a60cf9c7e308489"
+  },
+  "databases": {
+    "Reactome": {
+      "source": "https://reactome.org/download/current/NCBI2Reactome.txt",
+      "file": "outputs\\tables\\biology\\reference\\NCBI2Reactome_Homo_sapiens.tsv",
+      "sha256": "25797c79f9f9bc02014b9c3d7e4e23e2c540e3f3bf03d2eec8e2450220068d4b",
+      "total_mappings": 53207,
+      "distinct_pathways": 2337,
+      "database": "Reactome",
+      "background_universe": 16799,
+      "eligible_terms": 1159,
+      "eligible_foreground_lists": 560,
+      "total_tests": 649040,
+      "significant_tests_q_global_05": 4911,
+      "distinct_significant_terms": 424,
+      "distinct_significant_lncrnas": 279
+    },
+    "KEGG": {
+      "source": "https://rest.kegg.jp",
+      "link_file": "outputs\\tables\\biology\\reference\\kegg_hsa_gene_pathway.tsv",
+      "link_sha256": "5e01f2c1f10e692f5d6675a143b188edab321da5bb536b5463340a757475bf57",
+      "name_file": "outputs\\tables\\biology\\reference\\kegg_hsa_pathway_names.tsv",
+      "name_sha256": "faff2d0726329386807e802bd05a9a8d7d56084412e0cd4bac51f53ecfb191a1",
+      "total_mappings": 40028,
+      "distinct_pathways": 373,
+      "database": "KEGG",
+      "background_universe": 16799,
+      "eligible_terms": 355,
+      "eligible_foreground_lists": 560,
+      "total_tests": 198800,
+      "significant_tests_q_global_05": 2566,
+      "distinct_significant_terms": 185,
+      "distinct_significant_lncrnas": 259
+    },
+    "GO_BP_Stage12_Audit": {
+      "source": "Human.GRCh38.p13.annot.tsv.gz (Stage 12 snapshot)",
+      "total_significant": 3258,
+      "distinct_terms": 357,
+      "distinct_lncrnas": 278
+    }
+  }
+}
