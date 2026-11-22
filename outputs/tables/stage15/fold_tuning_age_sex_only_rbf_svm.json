@@ -1,0 +1,47 @@
+[
+  {
+    "fold": 1,
+    "best_params": {
+      "model__C": 1.0,
+      "model__gamma": "scale",
+      "select__k": 2
+    },
+    "best_inner_cv_auc": 0.7838541666666666
+  },
+  {
+    "fold": 2,
+    "best_params": {
+      "model__C": 10.0,
+      "model__gamma": "scale",
+      "select__k": 2
+    },
+    "best_inner_cv_auc": 0.6484375
+  },
+  {
+    "fold": 3,
+    "best_params": {
+      "model__C": 0.1,
+      "model__gamma": 0.01,
+      "select__k": 2
+    },
+    "best_inner_cv_auc": 0.65625
+  },
+  {
+    "fold": 4,
+    "best_params": {
+      "model__C": 0.1,
+      "model__gamma": "scale",
+      "select__k": 2
+    },
+    "best_inner_cv_auc": 0.6510416666666666
+  },
+  {
+    "fold": 5,
+    "best_params": {
+      "model__C": 0.1,
+      "model__gamma": "scale",
+      "select__k": 2
+    },
+    "best_inner_cv_auc": 0.7213541666666666
+  }
+]
