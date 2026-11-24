@@ -30,7 +30,8 @@ Thumbs.db
 /raw/
 
 # Large products, temporary scratch files, and per-sample working tables
-/outputs/models/
+/outputs/models/*
+!/outputs/models/stage15*
 /outputs/tables/**/tmp*/
 /outputs/tables/**/all_pairs.parquet
 /outputs/tables/**/sequence_hits.tsv

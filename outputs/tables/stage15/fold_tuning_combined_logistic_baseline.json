@@ -1,0 +1,27 @@
+[
+  {
+    "fold": 1,
+    "best_params": {},
+    "best_inner_cv_auc": 0.6889204677597535
+  },
+  {
+    "fold": 2,
+    "best_params": {},
+    "best_inner_cv_auc": 0.6377005012531328
+  },
+  {
+    "fold": 3,
+    "best_params": {},
+    "best_inner_cv_auc": 0.5321122127984873
+  },
+  {
+    "fold": 4,
+    "best_params": {},
+    "best_inner_cv_auc": 0.5596618878616916
+  },
+  {
+    "fold": 5,
+    "best_params": {},
+    "best_inner_cv_auc": 0.5744565534039219
+  }
+]
