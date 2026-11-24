@@ -1,0 +1,11 @@
+{
+  "nodes": 62,
+  "edges": 54,
+  "lncrnas": 9,
+  "coding": 53,
+  "components": 8,
+  "density": 0.028556319407720784,
+  "bipartite_density": 0.11320754716981132,
+  "average_triangle_clustering": 0.0,
+  "max_degree": 6
+}
