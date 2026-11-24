@@ -134,10 +134,11 @@ class TestComputeMetrics:
         assert m["threshold_used"] == pytest.approx(0.3)
         assert m["threshold_method"] == "provided"
 
-    def test_youden_threshold_method_label(self, realistic_predictions):
+    def test_prespecified_threshold(self, realistic_predictions):
         y, proba = realistic_predictions
         m = compute_metrics(y, proba, label="cv_oof")
-        assert m["threshold_method"] == "youden_oof"
+        assert m["threshold_method"] == "fixed_0.5"
+        assert m["threshold_used"] == 0.5
 
 
 # ---------------------------------------------------------------------------

@@ -84,9 +84,9 @@ class TestBuildModelRegistry:
         registry = build_model_registry(n_features=X.shape[1])
         for name, (pipe, _) in registry.items():
             step_names = [s[0] for s in pipe.steps]
-            assert "impute" in step_names, f"{name}: 'impute' step missing"
+            assert "impute_encode" in step_names, f"{name}: 'impute' step missing"
             assert "scale" in step_names, f"{name}: 'scale' step missing"
-            assert step_names.index("impute") < step_names.index("scale"), (
+            assert step_names.index("impute_encode") < step_names.index("scale"), (
                 f"{name}: 'impute' must precede 'scale'"
             )
 

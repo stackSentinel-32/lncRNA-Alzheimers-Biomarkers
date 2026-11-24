@@ -1,37 +1,4 @@
-"""scripts/ml/evaluate.py
-Stage 15 — Metric computation and figure generation for the lncSignal-AD study.
-
-Computes the full metric suite required by the task specification:
-  - ROC-AUC, Sensitivity (recall), Specificity, Precision, F1
-  - Balanced accuracy, Confusion matrix (TN/FP/FN/TP)
-  - 95% bootstrap confidence intervals for AUC
-  - Youden-optimal threshold (selected on the same data being evaluated,
-    or on a provided training set — never on external/holdout labels)
-  - Calibration (Brier score + reliability diagram)
-  - Class imbalance reporting
-
-Figures saved:
-  - ROC curve (per model and per feature set)
-  - Confusion matrix heatmap
-  - Calibration reliability diagram
-  - Bootstrap AUC CI bar plot
-
-Scientific note:
-  All thresholds are selected from the same OOF predictions (Youden criterion
-  applied to the OOF ROC curve). This is acceptable because OOF probabilities
-  are themselves generated from held-out folds. For strict correctness, the
-  threshold should ideally be selected inside the outer CV fold — the current
-  approach is a standard practical approximation.
-
-Exports:
-  MetricsDict       — TypedDict for the metric return value
-  compute_metrics() — full metric computation
-  plot_roc_comparison()
-  plot_confusion_matrix()
-  plot_calibration()
-  plot_bootstrap_ci()
-"""
-
+"""Internal OOF metrics and figures, with a prespecified decision threshold."""
 from __future__ import annotations
 
 import json
@@ -47,6 +14,8 @@ from sklearn.calibration import calibration_curve
 from sklearn.metrics import (
     ConfusionMatrixDisplay,
     auc,
+    average_precision_score,
+    precision_recall_curve,
     balanced_accuracy_score,
     brier_score_loss,
     confusion_matrix,
@@ -82,6 +51,7 @@ def _bootstrap_auc_ci(
     proba: np.ndarray,
     n: int = _BOOTSTRAP_N,
     seed: int = SEED,
+    groups=None,
 ) -> tuple[float, float]:
     """Stratified bootstrap 95% CI for AUC.
 
@@ -92,10 +62,14 @@ def _bootstrap_auc_ci(
     ids0 = np.where(y_true == 0)[0]
     ids1 = np.where(y_true == 1)[0]
     auc_vals: list[float] = []
+    blocks = [] if groups is None else [np.flatnonzero(np.asarray(groups) == g) for g in pd.unique(groups)]
     for _ in range(n):
-        s0 = rng.choice(ids0, size=len(ids0), replace=True)
-        s1 = rng.choice(ids1, size=len(ids1), replace=True)
-        idx = np.concatenate([s0, s1])
+        if blocks:
+            idx = np.concatenate([blocks[i] for i in rng.integers(len(blocks), size=len(blocks))])
+            if np.unique(y_true[idx]).size != 2:
+                continue
+        else:
+            idx = np.concatenate([rng.choice(ids, size=len(ids), replace=True) for ids in (ids0, ids1)])
         try:
             auc_vals.append(float(roc_auc_score(y_true[idx], proba[idx])))
         except ValueError:
@@ -111,14 +85,14 @@ def compute_metrics(
     proba: pd.Series,
     threshold: Optional[float] = None,
     label: str = "cv_oof",
+    groups=None,
 ) -> dict:
     """Compute the full metric suite for a set of predictions.
 
     Args:
         y_true: True binary labels (0=Control, 1=AD).
         proba: Predicted probabilities for AD class.
-        threshold: Decision threshold. If None, Youden-optimal threshold is
-                   computed from the ROC curve of these same predictions.
+        threshold: Decision threshold. Defaults to the prespecified 0.5.
         label: Evaluation source label — always 'cv_oof' for internal CV;
                'external' only if external holdout (not used in Stage 15).
 
@@ -135,11 +109,12 @@ def compute_metrics(
         raise ValueError("y_true must contain both classes (0 and 1).")
 
     auc_val = float(roc_auc_score(yt, pb))
-    ci_lo, ci_hi = _bootstrap_auc_ci(yt, pb)
+    ci_lo, ci_hi = _bootstrap_auc_ci(yt, pb, groups=groups)
+    precision_curve, recall_curve, _ = precision_recall_curve(yt,pb)
 
     if threshold is None:
-        threshold = _youden_threshold(yt, pb)
-        threshold_method = "youden_oof"
+        threshold = 0.5
+        threshold_method = "fixed_0.5"
     else:
         threshold_method = "provided"
 
@@ -156,6 +131,8 @@ def compute_metrics(
     return {
         "evaluation_source": label,
         "auc": auc_val,
+        "pr_auc": float(auc(recall_curve,precision_curve)),
+        "average_precision": float(average_precision_score(yt, pb)),
         "auc_ci_lo": ci_lo,
         "auc_ci_hi": ci_hi,
         "sensitivity": sens,
@@ -238,7 +215,7 @@ def plot_confusion_matrix(
     Args:
         y_true: True labels (0/1).
         proba: Predicted probabilities.
-        threshold: Decision threshold (Youden-optimal from OOF).
+        threshold: Decision threshold (prespecified).
         model_name: For figure title.
         feature_set: For figure title.
         save_path: PNG output path.
@@ -250,7 +227,7 @@ def plot_confusion_matrix(
     disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["Control", "AD"])
     disp.plot(ax=ax, colorbar=False, cmap="Blues")
     ax.set_title(
-        f"{model_name} / {feature_set}\nthreshold={threshold:.3f} (Youden OOF)",
+        f"{model_name} / {feature_set}\nthreshold={threshold:.3f} (fixed)",
         fontsize=10,
     )
     fig.tight_layout()

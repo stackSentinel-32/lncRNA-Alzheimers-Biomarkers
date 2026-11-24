@@ -66,6 +66,7 @@ class NestedCVResult:
     n_outer_folds: int = 5
     n_inner_folds: int = 3
     sample_ids: list[str] = field(default_factory=list)
+    outer_fold: pd.Series | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -119,6 +120,25 @@ def _choose_fold_count(
 # Core nested CV runner
 # ---------------------------------------------------------------------------
 
+def checked_splits(X, y, groups, folds, seed):
+    """Return verified partitions shared across candidates at each level."""
+    if not X.index.is_unique or not X.index.equals(y.index):
+        raise ValueError("Expected unique aligned sample IDs")
+    if groups is None:
+        splitter = StratifiedKFold(folds, shuffle=True, random_state=seed)
+    else:
+        if not groups.index.equals(y.index) or groups.isna().any():
+            raise ValueError("Incomplete or misaligned groups")
+        splitter = StratifiedGroupKFold(folds, shuffle=True, random_state=seed)
+    splits = list(splitter.split(X, y, groups))
+    for train, held in splits:
+        if y.iloc[train].nunique() != 2 or y.iloc[held].nunique() != 2:
+            raise ValueError("Split lacks a binary class")
+        if groups is not None and set(groups.iloc[train]) & set(groups.iloc[held]):
+            raise ValueError("Group leakage")
+    return splits
+
+
 def run_nested_cv(
     X: pd.DataFrame,
     y: pd.Series,
@@ -144,8 +164,8 @@ def run_nested_cv(
         dict mapping model_name -> NestedCVResult.
 
     Scientific note:
-        OOF probabilities are the unbiased performance estimates. Final model
-        selection should be based on these, not on inner-CV scores. The
+        OOF probabilities are the unbiased performance estimates. Family comparisons use these predictions. The family-selection procedure
+        ranks candidates using only inner-CV scores. The
         inner-CV is for hyperparameter selection only.
 
     Leakage safeguards:
@@ -166,21 +186,10 @@ def run_nested_cv(
 
     actual_outer, actual_inner = _choose_fold_count(y, outer_folds, inner_folds)
 
-    # ----- Splitters --------------------------------------------------------
-    if groups is not None:
-        outer_splitter = StratifiedGroupKFold(
-            n_splits=actual_outer, shuffle=True, random_state=SEED
-        )
-        split_kwargs: dict[str, Any] = {"groups": groups.values}
-    else:
-        outer_splitter = StratifiedKFold(
-            n_splits=actual_outer, shuffle=True, random_state=SEED
-        )
-        split_kwargs = {}
-
-    inner_splitter = StratifiedKFold(
-        n_splits=actual_inner, shuffle=True, random_state=SEED + 1
-    )
+    splits = checked_splits(X, y, groups, actual_outer, SEED)
+    membership = pd.Series(0, index=X.index)
+    for fold, (_, held) in enumerate(splits, 1):
+        membership.iloc[held] = fold
 
     results: dict[str, NestedCVResult] = {}
 
@@ -190,7 +199,7 @@ def run_nested_cv(
         oof = pd.Series(np.nan, index=X.index, dtype=float, name="oof_probability")
         fold_params: list[dict[str, Any]] = []
 
-        splits = list(outer_splitter.split(X, y, **split_kwargs))
+
 
         for fold_idx, (train_idx, val_idx) in enumerate(splits):
             X_train = X.iloc[train_idx]
@@ -202,10 +211,11 @@ def run_nested_cv(
                 estimator=pipeline,
                 param_grid=param_grid,
                 scoring="roc_auc",
-                cv=inner_splitter,
+                cv=checked_splits(X_train, y_train, None if groups is None else groups.iloc[train_idx],
+                                  actual_inner, SEED + 1),
                 n_jobs=1,
                 refit=True,
-                error_score=np.nan,
+                error_score="raise",
                 verbose=0,
             )
             search.fit(X_train, y_train)
@@ -241,51 +251,7 @@ def run_nested_cv(
             n_outer_folds=actual_outer,
             n_inner_folds=actual_inner,
             sample_ids=X.index.tolist(),
+            outer_fold=membership.copy(),
         )
 
     return results
-
-
-# ---------------------------------------------------------------------------
-# Final model fitter (after model family selection)
-# ---------------------------------------------------------------------------
-
-def fit_final_model(
-    X: pd.DataFrame,
-    y: pd.Series,
-    pipeline: Any,
-    param_grid: dict,
-    inner_folds: int = 5,
-) -> Any:
-    """Refit the selected model family on ALL discovery data.
-
-    This is distinct from CV estimators and must be stored separately.
-    It is used to generate a frozen model for future (sealed) external
-    validation — it must NOT be evaluated on the same discovery data.
-
-    Args:
-        X: Full discovery feature matrix.
-        y: Full discovery labels.
-        pipeline: Pipeline object from build_model_registry().
-        param_grid: Hyperparameter grid for the chosen model.
-        inner_folds: Folds for final inner tuning.
-
-    Returns:
-        Fitted best_estimator_ from GridSearchCV.
-    """
-    inner_splitter = StratifiedKFold(
-        n_splits=inner_folds, shuffle=True, random_state=SEED + 2
-    )
-    final_search = GridSearchCV(
-        estimator=pipeline,
-        param_grid=param_grid,
-        scoring="roc_auc",
-        cv=inner_splitter,
-        n_jobs=1,
-        refit=True,
-        verbose=0,
-    )
-    final_search.fit(X, y)
-    print(f"  [fit_final_model] Best params: {final_search.best_params_}")
-    print(f"  [fit_final_model] Inner CV AUC: {final_search.best_score_:.4f}")
-    return final_search.best_estimator_
