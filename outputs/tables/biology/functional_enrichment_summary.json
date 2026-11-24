@@ -1,0 +1,53 @@
+{
+  "stage": "Stage 13 - Functional Enrichment and Biological Interpretation",
+  "background_universe": {
+    "source": "GSE125583 fusiform gyrus measurable protein-coding genes",
+    "file": "outputs\\tables\\stage12\\enrichment_background.csv",
+    "universe_size": 16799,
+    "sha256": "85f7ede7068e0e033ddf661dbfe98d8fa9811e62600eefee1b82a7b01580d8cf"
+  },
+  "foregrounds": {
+    "source": "GSE125583 co-expression pairs (|r| >= 0.75 in both primary and sensitivity fits, q < 0.05)",
+    "file": "outputs\\tables\\stage12\\enrichment_foreground.csv.gz",
+    "memberships": 88089,
+    "distinct_lncrnas": 623,
+    "sha256": "da7ed0b0cadfe7a792789debcecf729afb6a72180f65f9014a60cf9c7e308489"
+  },
+  "databases": {
+    "Reactome": {
+      "snapshot": "NCBI2Reactome_Homo_sapiens.tsv.gz",
+      "sha256": "6e0d001934508b00bee478f0076a8acd1d62fcf45b1dea3171ba2f5d297feb4c",
+      "source": "Reactome NCBI2Reactome; release unrecorded",
+      "database": "Reactome",
+      "background_universe": 16799,
+      "mapped_background_genes": 9799,
+      "eligible_terms": 1159,
+      "eligible_foreground_lists": 560,
+      "total_tests": 649040,
+      "significant_tests_q_global_05": 4911,
+      "distinct_significant_terms": 424,
+      "distinct_significant_lncrnas": 279
+    },
+    "KEGG": {
+      "source": "KEGG REST human snapshot; release unrecorded",
+      "link_sha256": "70648476abc277676e164d4ae2133d1e6e7659ef8e95e4c0e69cf46e6e85ea28",
+      "name_sha256": "f50efbe2b77372246621e78b925d16cd1ff9400e4bb5b6550e71103fb1552469",
+      "database": "KEGG",
+      "background_universe": 16799,
+      "mapped_background_genes": 7438,
+      "eligible_terms": 355,
+      "eligible_foreground_lists": 560,
+      "total_tests": 198800,
+      "significant_tests_q_global_05": 2566,
+      "distinct_significant_terms": 185,
+      "distinct_significant_lncrnas": 259
+    },
+    "GO_BP_Stage12_Audit": {
+      "total_tests": 1022560,
+      "source": "Human.GRCh38.p13.annot.tsv.gz (Stage 12 snapshot)",
+      "total_significant": 3258,
+      "distinct_terms": 357,
+      "distinct_lncrnas": 278
+    }
+  }
+}
