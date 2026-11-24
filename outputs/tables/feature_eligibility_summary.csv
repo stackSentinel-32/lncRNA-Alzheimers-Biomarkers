@@ -1,0 +1,3 @@
+cohort,total_samples,AD_samples,Control_samples,MCI_samples,Unknown_samples,matrix_features,validated_probes,present_probes,eligible_probes,missing_expression_values
+GSE63061,388,139,134,109,6,605,605,605,605,0
+GSE63060,329,145,104,80,0,1125,1125,1125,1125,0
