@@ -1,0 +1,37 @@
+[
+  {
+    "fold": 1,
+    "best_params": {
+      "model__C": 0.5
+    },
+    "best_inner_cv_auc": 0.625
+  },
+  {
+    "fold": 2,
+    "best_params": {
+      "model__C": 10.0
+    },
+    "best_inner_cv_auc": 0.6171875
+  },
+  {
+    "fold": 3,
+    "best_params": {
+      "model__C": 5.0
+    },
+    "best_inner_cv_auc": 0.65625
+  },
+  {
+    "fold": 4,
+    "best_params": {
+      "model__C": 5.0
+    },
+    "best_inner_cv_auc": 0.6276041666666666
+  },
+  {
+    "fold": 5,
+    "best_params": {
+      "model__C": 0.5
+    },
+    "best_inner_cv_auc": 0.7083333333333334
+  }
+]
