@@ -2,6 +2,8 @@
 
 import numpy as np
 import pandas as pd
+import sklearn
+from packaging.version import Version
 
 from sklearn.base import clone
 from sklearn.feature_selection import SelectFromModel
@@ -9,6 +11,15 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 
 from scripts.ml.preprocessing import make_preprocessing_pipeline
+
+
+class _LassoSelection(SelectFromModel):
+    """Keep empty support inspectable, but stop before fitting a downstream model."""
+
+    def transform(self, X):
+        if not self.get_support().any():
+            raise ValueError("LASSO selected zero features on this training fold.")
+        return super().transform(X)
 
 
 def make_lasso_selector(feature_group="lncrna", C=0.1):
@@ -21,8 +32,10 @@ def make_lasso_selector(feature_group="lncrna", C=0.1):
     if C <= 0:
         raise ValueError("C must be positive.")
 
+    # sklearn 1.8 moved the L1/L2 choice from penalty to l1_ratio.
+    l1_params = {"l1_ratio": 1.0} if Version(sklearn.__version__) >= Version("1.8") else {"penalty": "l1"}
     lasso = LogisticRegression(
-        penalty="l1",
+        **l1_params,
         solver="liblinear",
         C=C,
         class_weight="balanced",
@@ -32,9 +45,9 @@ def make_lasso_selector(feature_group="lncrna", C=0.1):
 
     return Pipeline([
         ("preprocessing", make_preprocessing_pipeline(feature_group)),
-        ("selection", SelectFromModel(
+        ("selection", _LassoSelection(
             estimator=lasso,
-            threshold="mean",
+            threshold=1e-5,  # sklearn's L1 coefficient-magnitude tolerance
         )),
     ])
 
@@ -106,7 +119,7 @@ def selection_stability(
             "selection_frequency": count / total_folds,
         }
         for feature, count in counts.items()
-    ])
+    ], columns=["feature_id", "selected_folds", "selection_frequency"])
 
     if not stability.empty:
         stability = stability.sort_values(

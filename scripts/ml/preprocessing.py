@@ -2,6 +2,7 @@
 """Leakage-safe preprocessing pipelines for Stage 14."""
 
 import numpy as np
+import pandas as pd
 
 from sklearn.compose import ColumnTransformer, make_column_selector
 from sklearn.feature_selection import VarianceThreshold
@@ -38,7 +39,7 @@ def make_preprocessing_pipeline(feature_group="lncrna"):
     # Demographic and combined groups contain categorical Sex.
     if feature_group in {"demographic", "combined"}:
         categorical_pipeline = Pipeline([
-            ("imputer", SimpleImputer(strategy="most_frequent")),
+            ("imputer", SimpleImputer(strategy="most_frequent", missing_values=pd.NA)),
             ("encoder", OneHotEncoder(
                 handle_unknown="ignore",
                 sparse_output=False,
