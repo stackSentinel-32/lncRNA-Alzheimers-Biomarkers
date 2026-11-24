@@ -1,37 +1,27 @@
 [
   {
     "fold": 1,
-    "best_params": {
-      "model__max_iter": 4000
-    },
-    "best_inner_cv_auc": 0.6119791666666666
+    "best_params": {},
+    "best_inner_cv_auc": 0.5913828361604051
   },
   {
     "fold": 2,
-    "best_params": {
-      "model__max_iter": 4000
-    },
-    "best_inner_cv_auc": 0.6171875
+    "best_params": {},
+    "best_inner_cv_auc": 0.6522733918128656
   },
   {
     "fold": 3,
-    "best_params": {
-      "model__max_iter": 4000
-    },
-    "best_inner_cv_auc": 0.65625
+    "best_params": {},
+    "best_inner_cv_auc": 0.5633718133718134
   },
   {
     "fold": 4,
-    "best_params": {
-      "model__max_iter": 4000
-    },
-    "best_inner_cv_auc": 0.6354166666666666
+    "best_params": {},
+    "best_inner_cv_auc": 0.5980262009239582
   },
   {
     "fold": 5,
-    "best_params": {
-      "model__max_iter": 4000
-    },
-    "best_inner_cv_auc": 0.7005208333333334
+    "best_params": {},
+    "best_inner_cv_auc": 0.5859044543255069
   }
 ]

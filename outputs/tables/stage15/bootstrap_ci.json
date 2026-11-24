@@ -1,92 +1,77 @@
 {
   "age_sex_only__logistic_baseline": {
-    "auc": 0.5994444444444444,
-    "auc_ci_lo": 0.46215277777777775,
-    "auc_ci_hi": 0.7372361111111111,
-    "evaluation_source": "cv_oof"
+    "auc": 0.5969880811768495,
+    "auc_ci_lo": 0.5253752279847204,
+    "auc_ci_hi": 0.6647901696026401
   },
   "age_sex_only__logistic_l1": {
-    "auc": 0.605,
-    "auc_ci_lo": 0.46715277777777775,
-    "auc_ci_hi": 0.7366944444444444,
-    "evaluation_source": "cv_oof"
+    "auc": 0.6146784065285085,
+    "auc_ci_lo": 0.5444954255767316,
+    "auc_ci_hi": 0.6844804503682299
   },
   "age_sex_only__elastic_net": {
-    "auc": 0.6105555555555555,
-    "auc_ci_lo": 0.4666527777777778,
-    "auc_ci_hi": 0.7461527777777778,
-    "evaluation_source": "cv_oof"
+    "auc": 0.6147857833136476,
+    "auc_ci_lo": 0.5483510583064953,
+    "auc_ci_hi": 0.6833069106266024
   },
   "age_sex_only__random_forest": {
-    "auc": 0.6588888888888889,
-    "auc_ci_lo": 0.5127777777777778,
-    "auc_ci_hi": 0.7861388888888889,
-    "evaluation_source": "cv_oof"
+    "auc": 0.5768280897669924,
+    "auc_ci_lo": 0.5122033151060774,
+    "auc_ci_hi": 0.6398014576268655
   },
   "age_sex_only__rbf_svm": {
-    "auc": 0.45166666666666666,
-    "auc_ci_lo": 0.3164444444444444,
-    "auc_ci_hi": 0.6027777777777779,
-    "evaluation_source": "cv_oof"
+    "auc": 0.3982873402770321,
+    "auc_ci_lo": 0.3384148712819557,
+    "auc_ci_hi": 0.4637648126939817
   },
   "lncrna_only__logistic_baseline": {
-    "auc": 0.7966666666666666,
-    "auc_ci_lo": 0.6799861111111111,
-    "auc_ci_hi": 0.8977777777777778,
-    "evaluation_source": "cv_oof"
+    "auc": 0.618597659186084,
+    "auc_ci_lo": 0.5543605303181318,
+    "auc_ci_hi": 0.6805199201755091
   },
   "lncrna_only__logistic_l1": {
-    "auc": 0.8166666666666667,
-    "auc_ci_lo": 0.7010833333333334,
-    "auc_ci_hi": 0.9166666666666666,
-    "evaluation_source": "cv_oof"
+    "auc": 0.5898743691613872,
+    "auc_ci_lo": 0.5175230897092337,
+    "auc_ci_hi": 0.6588652738446128
   },
   "lncrna_only__elastic_net": {
-    "auc": 0.7977777777777778,
-    "auc_ci_lo": 0.6777777777777778,
-    "auc_ci_hi": 0.895611111111111,
-    "evaluation_source": "cv_oof"
+    "auc": 0.6098464511972512,
+    "auc_ci_lo": 0.5392369427718828,
+    "auc_ci_hi": 0.6771097120386147
   },
   "lncrna_only__random_forest": {
-    "auc": 0.8922222222222222,
-    "auc_ci_lo": 0.7944444444444445,
-    "auc_ci_hi": 0.9677777777777777,
-    "evaluation_source": "cv_oof"
+    "auc": 0.7051970364007301,
+    "auc_ci_lo": 0.6410405064830388,
+    "auc_ci_hi": 0.7637489775489776
   },
   "lncrna_only__rbf_svm": {
-    "auc": 0.6344444444444444,
-    "auc_ci_lo": 0.49111111111111105,
-    "auc_ci_hi": 0.7666666666666666,
-    "evaluation_source": "cv_oof"
+    "auc": 0.6692795017717169,
+    "auc_ci_lo": 0.6056759697629264,
+    "auc_ci_hi": 0.7323620538458617
   },
   "combined__logistic_baseline": {
-    "auc": 0.7666666666666666,
-    "auc_ci_lo": 0.6399861111111111,
-    "auc_ci_hi": 0.8744444444444445,
-    "evaluation_source": "cv_oof"
+    "auc": 0.6192419198969183,
+    "auc_ci_lo": 0.5537762843542439,
+    "auc_ci_hi": 0.6818299238075357
   },
   "combined__logistic_l1": {
-    "auc": 0.8077777777777778,
-    "auc_ci_lo": 0.6855277777777778,
-    "auc_ci_hi": 0.9111111111111111,
-    "evaluation_source": "cv_oof"
+    "auc": 0.5843981531192955,
+    "auc_ci_lo": 0.5158068733089254,
+    "auc_ci_hi": 0.6538834888137574
   },
   "combined__elastic_net": {
-    "auc": 0.7877777777777778,
-    "auc_ci_lo": 0.6610833333333335,
-    "auc_ci_hi": 0.8944444444444445,
-    "evaluation_source": "cv_oof"
+    "auc": 0.6279931278857511,
+    "auc_ci_lo": 0.5564220288111758,
+    "auc_ci_hi": 0.6937202829814604
   },
   "combined__random_forest": {
-    "auc": 0.8877777777777778,
-    "auc_ci_lo": 0.7866666666666667,
-    "auc_ci_hi": 0.9611388888888889,
-    "evaluation_source": "cv_oof"
+    "auc": 0.6984322989369698,
+    "auc_ci_lo": 0.6342737417862847,
+    "auc_ci_hi": 0.7592323916489384
   },
   "combined__rbf_svm": {
-    "auc": 0.7083333333333334,
-    "auc_ci_lo": 0.5672083333333334,
-    "auc_ci_hi": 0.8277777777777778,
-    "evaluation_source": "cv_oof"
+    "auc": 0.6625684527005261,
+    "auc_ci_lo": 0.5982689166616468,
+    "auc_ci_hi": 0.7260629241916483
   }
 }

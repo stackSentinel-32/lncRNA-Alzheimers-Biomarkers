@@ -1,0 +1,74 @@
+{
+  "rule": "For the lncRNA-only development model, select family and settings by highest mean three-fold inner ROC-AUC. Resolve family ties in registry order and grid ties in ParameterGrid order. Apply the same rule separately on each outer training set and, after evaluation, on all discovery samples. Fixed AD threshold 0.5.",
+  "folds": [
+    {
+      "model": "random_forest",
+      "fold": 1,
+      "best_params": {
+        "model__max_depth": 5,
+        "select__k": 20
+      },
+      "best_inner_cv_auc": 0.7695903544728733
+    },
+    {
+      "model": "rbf_svm",
+      "fold": 2,
+      "best_params": {
+        "model__estimator__C": 1.0,
+        "select__k": 5
+      },
+      "best_inner_cv_auc": 0.7372246588693958
+    },
+    {
+      "model": "random_forest",
+      "fold": 3,
+      "best_params": {
+        "model__max_depth": 5,
+        "select__k": 5
+      },
+      "best_inner_cv_auc": 0.6461025935535739
+    },
+    {
+      "model": "random_forest",
+      "fold": 4,
+      "best_params": {
+        "model__max_depth": 5,
+        "select__k": 5
+      },
+      "best_inner_cv_auc": 0.7093346709672316
+    },
+    {
+      "model": "random_forest",
+      "fold": 5,
+      "best_params": {
+        "model__max_depth": 5,
+        "select__k": 20
+      },
+      "best_inner_cv_auc": 0.7152437889279994
+    }
+  ],
+  "metrics": {
+    "evaluation_source": "cv_oof",
+    "auc": 0.7017072908837109,
+    "pr_auc": 0.6967247556497289,
+    "average_precision": 0.698760519678666,
+    "auc_ci_lo": 0.6390873467030401,
+    "auc_ci_hi": 0.7601301370278923,
+    "sensitivity": 0.6258992805755396,
+    "specificity": 0.6417910447761194,
+    "precision": 0.6444444444444445,
+    "recall": 0.6258992805755396,
+    "f1": 0.635036496350365,
+    "balanced_accuracy": 0.6338451626758295,
+    "brier_score": 0.21652568895564128,
+    "threshold_used": 0.5,
+    "threshold_method": "fixed_0.5",
+    "TN": 86,
+    "FP": 48,
+    "FN": 52,
+    "TP": 87,
+    "n_ad": 139,
+    "n_control": 134,
+    "class_imbalance_ratio": 1.0373
+  }
+}

@@ -126,7 +126,7 @@ class TestManifestCompleteness:
         "discovery_cohort",
         "best_model_family",
         "feature_set",
-        "feature_gene_ids_in_order",
+        "input_probe_ids",
         "cv_oof_auc",
         "cv_oof_auc_ci_95pct",
         "package_versions",
@@ -197,16 +197,18 @@ class TestFinalModelFile:
         manifest_path = OUT_MODELS / "stage15_model_manifest.json"
         assert manifest_path.exists(), "Manifest must exist"
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        features = manifest["feature_gene_ids_in_order"]
+        features = manifest["input_probe_ids"]
         model = joblib.load(OUT_MODELS / "stage15_development_model.joblib")
         
-        # Create test input with exact expected features
+        assert manifest["discovery_cohort"] == "GSE63061"
+        assert manifest["synthetic_dry_run"] is False
+        assert model.feature_names_in_.tolist() == features
+        assert len(features) == len(set(features)) == 605
+        assert model[:-1].get_feature_names_out().tolist() == manifest["estimator_input_probe_ids"]
+        from scripts.ml.model_comparison import digest
+        assert digest(OUT_MODELS / "stage15_development_model.joblib") == manifest["model_sha256"]
         rng = np.random.default_rng(SEED)
-        X_test = pd.DataFrame(
-            rng.standard_normal((10, len(features))),
-            columns=features,
-            index=[f"TEST_{i:02d}" for i in range(10)],
-        )
+        X_test = pd.DataFrame(rng.standard_normal((10,len(features))), columns=features)
         proba = model.predict_proba(X_test)[:, 1]
         assert len(proba) == 10
         assert np.all(proba >= 0.0) and np.all(proba <= 1.0)
@@ -285,3 +287,58 @@ class TestNoLeakage:
         )
         fold_counts = val_membership.value_counts()
         assert len(fold_counts) == 3, "Should have 3 validation fold groups"
+
+@pytest.mark.skipif(not (PROJECT_ROOT / "data/processed/stage10/GSE63061_validated_lncrna.parquet").exists(),
+                    reason="requires original discovery inputs")
+def test_real_discovery_alignment_and_selection():
+    """Reconstruct all outer partitions, procedure predictions and final feature identities."""
+    import json
+    from sklearn.metrics import confusion_matrix, roc_auc_score, precision_recall_curve, auc
+    from scripts.ml.model_comparison import discovery
+    from scripts.ml.nested_cv import checked_splits
+
+    data, chip = discovery()
+    y = data["y"]
+    assert y.value_counts().to_dict() == {1:139, 0:134}
+    assert y.equals(data["metadata"].diagnosis.map({"AD":1,"Control":0}).astype("int8").rename("target"))
+    assert data["X_combined"].shape == (273,607)
+    assert data["X_demographic"].shape == (273,2)
+    manifest = json.loads((OUT_MODELS/"stage15_model_manifest.json").read_text())
+    assert manifest["input_probe_ids"] == data["feature_manifest"].feature_id.tolist()
+    assert manifest["active_gene_ids"] == data["feature_manifest"].set_index("feature_id").gene_id.loc[manifest["active_probe_ids"]].tolist()
+    assert (manifest["n_samples"],manifest["n_ad"],manifest["n_control"]) == (273,139,134)
+    procedure = json.loads((OUT_TABLES/"selection_procedure.json").read_text())
+    scores = pd.read_csv(OUT_TABLES/"oof_selection_procedure.csv",index_col="sample_id")
+    assert scores.index.equals(y.index) and np.array_equal(scores.true_label,y)
+    assert roc_auc_score(y,scores.oof_probability_ad) == pytest.approx(manifest["cv_oof_auc"])
+    import joblib
+    from sklearn.base import clone
+    frozen = joblib.load(OUT_MODELS/"stage15_development_model.joblib")
+    registry = build_model_registry(605)
+    winner = max(registry, key=lambda name: manifest["final_cv"][name]["auc"])
+    assert winner == manifest["best_model_family"]
+    replay = clone(registry[winner][0]).set_params(**manifest["best_params"]).fit(data["X_lncrna"],y)
+    np.testing.assert_allclose(replay.predict_proba(data["X_lncrna"]),frozen.predict_proba(data["X_lncrna"]))
+    splits = checked_splits(data["X_lncrna"],y,chip,5,SEED)
+    for i,(train,held) in enumerate(splits):
+        assert set(chip.iloc[train]).isdisjoint(chip.iloc[held])
+        fold = procedure["folds"][i]
+        assert (scores.outer_fold.iloc[held] == i+1).all()
+        logs = {name: json.loads((OUT_TABLES/f"fold_tuning_lncrna_only_{name}.json").read_text())[i]
+                for name in build_model_registry(605)}
+        assert fold["model"] == max(logs,key=lambda n:logs[n]["best_inner_cv_auc"])
+        source = pd.read_csv(OUT_TABLES/f"oof_lncrna_only_{fold['model']}.csv",index_col="sample_id")
+        np.testing.assert_allclose(scores.oof_probability_ad.iloc[held],source.oof_probability_ad.loc[y.index[held]])
+        for a,b in checked_splits(data["X_lncrna"].iloc[train],y.iloc[train],chip.iloc[train],3,SEED+1):
+            assert set(chip.iloc[train].iloc[a]).isdisjoint(chip.iloc[train].iloc[b])
+    summary = pd.read_csv(OUT_TABLES/"nested_cv_summary.csv")
+    assert len(summary) == 15
+    for row in summary.itertuples():
+        pred = pd.read_csv(OUT_TABLES/f"oof_{row.feature_set}_{row.model}.csv",index_col="sample_id")
+        assert pred.index.equals(y.index) and np.array_equal(pred.true_label,y)
+        assert pred.outer_fold.equals(scores.outer_fold)
+        prob = pred.oof_probability_ad
+        assert np.array_equal(confusion_matrix(y,prob>=0.5).ravel(), [row.TN,row.FP,row.FN,row.TP])
+        assert roc_auc_score(y,prob) == pytest.approx(row.auc)
+        precision,recall,_ = precision_recall_curve(y,prob)
+        assert auc(recall,precision) == pytest.approx(row.pr_auc)

@@ -2,51 +2,41 @@
   {
     "fold": 1,
     "best_params": {
-      "model__max_depth": 3,
-      "model__min_samples_leaf": 3,
-      "model__n_estimators": 400,
+      "model__max_depth": 5,
       "select__k": 20
     },
-    "best_inner_cv_auc": 0.9114583333333334
+    "best_inner_cv_auc": 0.7733012291361289
   },
   {
     "fold": 2,
     "best_params": {
-      "model__max_depth": 3,
-      "model__min_samples_leaf": 3,
-      "model__n_estimators": 200,
-      "select__k": 20
+      "model__max_depth": 5,
+      "select__k": 5
     },
-    "best_inner_cv_auc": 0.9583333333333334
+    "best_inner_cv_auc": 0.7496999443052075
   },
   {
     "fold": 3,
     "best_params": {
-      "model__max_depth": 3,
-      "model__min_samples_leaf": 3,
-      "model__n_estimators": 200,
-      "select__k": 20
+      "model__max_depth": 5,
+      "select__k": 5
     },
-    "best_inner_cv_auc": 0.8645833333333334
+    "best_inner_cv_auc": 0.6461025935535739
   },
   {
     "fold": 4,
     "best_params": {
       "model__max_depth": 5,
-      "model__min_samples_leaf": 3,
-      "model__n_estimators": 200,
       "select__k": 5
     },
-    "best_inner_cv_auc": 0.8541666666666666
+    "best_inner_cv_auc": 0.7093346709672316
   },
   {
     "fold": 5,
     "best_params": {
-      "model__max_depth": 3,
-      "model__min_samples_leaf": 3,
-      "model__n_estimators": 200,
-      "select__k": 10
+      "model__max_depth": 5,
+      "select__k": 20
     },
-    "best_inner_cv_auc": 0.9322916666666666
+    "best_inner_cv_auc": 0.7152437889279994
   }
 ]

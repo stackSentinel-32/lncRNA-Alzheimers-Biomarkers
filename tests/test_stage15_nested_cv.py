@@ -172,3 +172,36 @@ class TestRunNestedCV:
             assert not ncv_result.oof_probabilities.isna().any(), (
                 f"{name}: NaN in group-aware OOF predictions"
             )
+
+
+def test_preprocessing_and_supervised_fits_match_nested_training_partitions(balanced_dataset, monkeypatch):
+    from sklearn.compose import ColumnTransformer
+    from sklearn.feature_selection import SelectKBest
+    from scripts.ml.nested_cv import checked_splits
+
+    X, y = balanced_dataset
+    groups = pd.Series(np.arange(len(X)) // 2, index=X.index)
+    fits, supervised = [], []
+    original_transform = ColumnTransformer.fit_transform
+    original_select = SelectKBest.fit
+
+    def record_transform(self, frame, labels=None, **kwargs):
+        fits.append(frame.index.tolist())
+        assert frame.index.equals(labels.index)
+        return original_transform(self, frame, labels, **kwargs)
+
+    def record_select(self, frame, labels, **kwargs):
+        supervised.append(labels.index.tolist())
+        return original_select(self, frame, labels, **kwargs)
+
+    monkeypatch.setattr(ColumnTransformer, "fit_transform", record_transform)
+    monkeypatch.setattr(SelectKBest, "fit", record_select)
+    pipe, _ = build_model_registry(X.shape[1])["random_forest"]
+    registry = {"rf": (pipe, {"model__n_estimators":[3]})}
+    run_nested_cv(X,y,registry,groups=groups,outer_folds=3,inner_folds=2)
+    expected = []
+    for train, held in checked_splits(X,y,groups,3,SEED):
+        for inner, _ in checked_splits(X.iloc[train],y.iloc[train],groups.iloc[train],2,SEED+1):
+            expected.append(X.index[train[inner]].tolist())
+        expected.append(X.index[train].tolist())
+    assert fits == supervised == expected

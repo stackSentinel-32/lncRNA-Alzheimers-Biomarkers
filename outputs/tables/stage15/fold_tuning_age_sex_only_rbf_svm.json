@@ -2,46 +2,41 @@
   {
     "fold": 1,
     "best_params": {
-      "model__C": 1.0,
-      "model__gamma": "scale",
+      "model__estimator__C": 1.0,
       "select__k": 2
     },
-    "best_inner_cv_auc": 0.7838541666666666
+    "best_inner_cv_auc": 0.452682371119088
   },
   {
     "fold": 2,
     "best_params": {
-      "model__C": 10.0,
-      "model__gamma": "scale",
+      "model__estimator__C": 1.0,
       "select__k": 2
     },
-    "best_inner_cv_auc": 0.6484375
+    "best_inner_cv_auc": 0.5092331523252576
   },
   {
     "fold": 3,
     "best_params": {
-      "model__C": 0.1,
-      "model__gamma": 0.01,
+      "model__estimator__C": 1.0,
       "select__k": 2
     },
-    "best_inner_cv_auc": 0.65625
+    "best_inner_cv_auc": 0.46847251249212035
   },
   {
     "fold": 4,
     "best_params": {
-      "model__C": 0.1,
-      "model__gamma": "scale",
+      "model__estimator__C": 0.1,
       "select__k": 2
     },
-    "best_inner_cv_auc": 0.6510416666666666
+    "best_inner_cv_auc": 0.4011207777933595
   },
   {
     "fold": 5,
     "best_params": {
-      "model__C": 0.1,
-      "model__gamma": "scale",
+      "model__estimator__C": 0.1,
       "select__k": 2
     },
-    "best_inner_cv_auc": 0.7213541666666666
+    "best_inner_cv_auc": 0.41420523525786684
   }
 ]

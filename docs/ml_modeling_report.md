@@ -1,238 +1,64 @@
-# Stage 15 · ML Modeling Report — lncSignal-AD
+# Stage 15 | Internal prediction in GSE63061 whole blood
 
-**Project:** lncSignal-AD — Establishing the role of lncRNAs as Alzheimer's disease biomarkers  
-**Cohort (discovery):** GSE63061 (Peripheral whole blood, Illumina HumanHT-12 v4, GPL10558)  
-**External holdout:** GSE140829 — **SEALED. Not accessed in this stage.**  
-**Stage:** 15 — Machine Learning and Evaluation  
-**Evaluation type:** Internal nested cross-validation on discovery cohort only  
-**Metric source:** `cv_oof` (out-of-fold)  
+The lncRNA model-selection procedure achieved ROC-AUC 0.7017 and PR-AUC 0.6967 on held-out discovery samples. At the prespecified AD probability threshold of 0.5, it identified 87 of 139 AD samples and correctly classified 86 of 134 controls. This study evaluates internal discrimination. Patient-level transportability, clinical calibration and external predictive validity remain unknown.
 
----
+## Cohort and protocol
 
-## 1. Scientific Context and Expectations
+The Stage 14 builder aligned 273 binary samples by GSM ID and supplied 605 validated probe intensities, age and sex. Diagnosis coding was AD=1 and Control=0. All three predictor groups used the same samples and outer folds. The contributor's dry run (60 artificial samples) previously occupied the production output paths. The real-data entry point now consumes only the GSE63061 Stage 14 outputs. The former real-data loader aggregated probes to genes, applied whole-cohort filtering and selected complete demographic cases. The corrected pipeline retains probe identities and fits preprocessing inside each training partition.
 
-Prior stages established the following facts that directly constrain what ML can achieve:
+The discovery GEO header contains unique sample-description codes and array positions for these 273 observations. It supplies no independently verified longitudinal patient key. The 34 physical chips inferred from array-title barcodes served as groups in stratified five-fold outer and three-fold inner CV. All samples on a chip stayed together at both levels. The discovery sample codes, titles, centers and chips were excluded from predictors. Unrecognized repeated donors across chips and center-associated confounding remain possible.
 
-| Prior result | Implication for ML |
-|---|---|
-| 3 of 605 blood lncRNA probes met FDR < 0.05 (Stage 11) | Very few probes carry a strong signal |
-| Only MIR29B2CHG partially replicated (rep-FDR 0.109, pre-specified threshold not met) | No pre-specified blood replication criterion was satisfied |
-| Standardised effect correlation between discovery and replication: r = 0.350 | Moderate cross-cohort consistency; signal is weak and noisy |
-| 572 lncRNA gene features in discovery cohort | High-dimensional relative to N ≈ 273 binary samples |
+Every candidate fitted the Stage 14 training-fold median and categorical mode imputers, one-hot encoder for sex where applicable, variance filter and standardizer. L1 and elastic-net models learn sparse coefficients during training. Forest and SVM models additionally fitted univariate F-test selection inside the pipeline. SVM sigmoid calibration uses three internal training partitions and has no access to inner validation or outer test observations. The calibration subdivisions themselves are sample-based. No Stage 11 DE ranking or full-cohort supervised shortlist entered the evaluation.
 
-> **Expected performance:** AUC near 0.5–0.6 is scientifically honest given the near-null blood signal. If the model achieves higher AUC, it may reflect overfitting, demographic confounding, or probe-level artefacts — not necessarily a true biomarker signal.
+Outer held-out fold sizes were 58, 52, 58, 53, 52 samples in fold order, with 7, 7, 7, 7, 6 chips respectively. Every discovery sample received exactly one held-out score per candidate.
 
----
+### Candidate settings
 
-## 2. Cohort and Sample Summary
+The search used deterministic seeds 42 (outer split and stochastic estimators) and 43 (inner split). The logistic baseline used unpenalized logistic regression. L1 evaluated C = 0.05, 0.2 and 1. Elastic net evaluated C = 0.05 and 0.2 with L1 ratios 0.25 and 0.75. Forests used 100 trees, minimum leaf size 3 and maximum depths 3 and 5. RBF SVM evaluated C = 0.1 and 1 with default scale gamma. The forest and SVM compared 5 and 20 predictors capped at the raw predictor count. The grid was fixed before the real-data run.
 
-| Cohort | Accession | Samples (AD/Control) | Features (validated lncRNA probes) | Role |
-|---|---|---|---|---|
-| Discovery | GSE63061 | 139 / 134 (273 binary) | 605 probes → 572 gene IDs | Model training + internal CV |
-| Replication | GSE63060 | 145 / 104 | 1,087 probes (357 shared with discovery) | Not used in ML (Stage 11 only) |
-| External holdout | GSE140829 | 204 / 249 | 845 validated genes | **Sealed — not accessed** |
+## Comparison of the 15 prespecified candidates
 
-**Excluded from binary model:** 109 MCI and 6 Unknown samples in GSE63061 (consistent with Stage 11 design).
+Each row pools one outer-held-out prediction per sample for one candidate. PR-AUC uses trapezoidal integration of the precision-recall curve. Average precision, bootstrap intervals, Brier scores and unrounded metrics are also in the [full comparison](../outputs/tables/stage15/nested_cv_summary.csv). AD prevalence is 139/273 (0.5092). Confusion counts are in TN, FP, FN, TP order.
 
----
+| Feature group | Model | ROC-AUC | PR-AUC | Sensitivity | Specificity | F1 | Balanced accuracy | TN / FP / FN / TP |
+|---|---|---:|---:|---:|---:|---:|---:|---|
+| age_sex_only | logistic_baseline | 0.5970 | 0.5742 | 0.6691 | 0.5448 | 0.6348 | 0.6069 | 73 / 61 / 46 / 93 |
+| age_sex_only | logistic_l1 | 0.6147 | 0.5827 | 0.6331 | 0.5896 | 0.6241 | 0.6113 | 79 / 55 / 51 / 88 |
+| age_sex_only | elastic_net | 0.6148 | 0.6003 | 0.6763 | 0.5448 | 0.6395 | 0.6105 | 73 / 61 / 45 / 94 |
+| age_sex_only | random_forest | 0.5768 | 0.5453 | 0.5755 | 0.5597 | 0.5755 | 0.5676 | 75 / 59 / 59 / 80 |
+| age_sex_only | rbf_svm | 0.3983 | 0.4394 | 0.6763 | 0.2239 | 0.5579 | 0.4501 | 30 / 104 / 45 / 94 |
+| lncrna_only | logistic_baseline | 0.6186 | 0.6102 | 0.5683 | 0.5672 | 0.5725 | 0.5678 | 76 / 58 / 60 / 79 |
+| lncrna_only | logistic_l1 | 0.5899 | 0.5674 | 0.6115 | 0.5373 | 0.5944 | 0.5744 | 72 / 62 / 54 / 85 |
+| lncrna_only | elastic_net | 0.6098 | 0.5897 | 0.6259 | 0.5373 | 0.6042 | 0.5816 | 72 / 62 / 52 / 87 |
+| lncrna_only | random_forest | 0.7052 | 0.6926 | 0.6115 | 0.6418 | 0.6250 | 0.6267 | 86 / 48 / 54 / 85 |
+| lncrna_only | rbf_svm | 0.6693 | 0.6444 | 0.6403 | 0.6418 | 0.6449 | 0.6410 | 86 / 48 / 50 / 89 |
+| combined | logistic_baseline | 0.6192 | 0.6083 | 0.5683 | 0.5821 | 0.5766 | 0.5752 | 78 / 56 / 60 / 79 |
+| combined | logistic_l1 | 0.5844 | 0.5649 | 0.6115 | 0.5224 | 0.5903 | 0.5669 | 70 / 64 / 54 / 85 |
+| combined | elastic_net | 0.6280 | 0.6062 | 0.6331 | 0.5597 | 0.6154 | 0.5964 | 75 / 59 / 51 / 88 |
+| combined | random_forest | 0.6984 | 0.6848 | 0.5899 | 0.6194 | 0.6029 | 0.6047 | 83 / 51 / 57 / 82 |
+| combined | rbf_svm | 0.6626 | 0.6327 | 0.6403 | 0.6119 | 0.6357 | 0.6261 | 82 / 52 / 50 / 89 |
 
-## 3. Feature Sets Evaluated
+## Evaluation of the selection procedure
 
-Three comparison feature sets were evaluated under the same nested CV protocol:
+The prespecified development target was lncRNA-only prediction. Demographic and combined models were comparators. For each outer training set, rank all five lncRNA families and settings by mean inner ROC-AUC. Break exact family ties in registry order and parameter ties in grid order. Use the winner's refit for that fold's held-out samples. One fold selected SVM and four selected random forest. The full-data training run later applied this same rule. Choosing the highest *observed outer* score across the comparison table would introduce selection optimism.
 
-| Feature set | Features included | Purpose |
-|---|---|---|
-| `age_sex_only` | Age (continuous), sex (binary) | Demographic baseline; evaluate confounding |
-| `lncrna_only` | 572 validated lncRNA gene expression values | Primary biomarker model |
-| `combined` | Age + sex + lncRNA features (intersection of complete samples) | Does lncRNA add value beyond demographics? |
+| ROC-AUC | PR-AUC | Average precision | Sensitivity | Specificity | F1 | Balanced accuracy | TN / FP / FN / TP |
+|---:|---:|---:|---:|---:|---:|---:|---|
+| 0.7017 | 0.6967 | 0.6988 | 0.6259 | 0.6418 | 0.6350 | 0.6338 | 86 / 48 / 52 / 87 |
 
-**Anti-leakage rule:** All imputation, scaling, and feature selection occur **inside the fitted pipeline**, applied separately within each training fold. No transformation is fitted on the full dataset or on validation/test data.
+The 95% percentile interval for procedure ROC-AUC was 0.6391 to 0.7601, from 1,000 chip-level resamples of the fixed out-of-fold predictions. It describes uncertainty conditional on these fitted folds and does not include repeated training or split-selection variability. The five-probe full-data model has no separate independent performance estimate. Association with diagnosis does not establish regulation, causal significance or clinical utility. [Fold choices and exact procedure metrics](../outputs/tables/stage15/selection_procedure.json)
 
----
+## Reproduction
 
-## 4. Models Evaluated
-
-| Model | Regularisation | Feature selection | Complexity rationale |
-|---|---|---|---|
-| `logistic_baseline` | None | None | Demographic baseline; intercept + 2 covariates |
-| `logistic_l1` | L1 (LASSO) | Implicit sparse | Produces interpretable panel; shrinks irrelevant features to 0 |
-| `elastic_net` | L1 + L2 | Implicit | Appropriate for correlated probes; L1 alone may be unstable |
-| `random_forest` | Implicit (tree depth) | SelectKBest (inside fold) | Non-linear; restricted depth for small N |
-| `rbf_svm` | C + γ tuning | SelectKBest (inside fold) | Non-linear; probability calibrated via Platt scaling |
-
-All models use `class_weight='balanced'` or equivalent to handle minor class imbalance.
-
----
-
-## 5. Nested Cross-Validation Design
-
-```
-Discovery cohort (N = 273)
-         │
-  ┌──────┴──────┐  Outer 5-fold stratified CV
-  │  Fold 1–5   │  → Performance estimation (OOF probabilities)
-  └──────┬──────┘
-         │
-  ┌──────┴──────┐  Inner 3-fold stratified CV (within each training fold)
-  │  Fold 1–3   │  → Hyperparameter selection (GridSearchCV)
-  └─────────────┘
-```
-
-**Fold count rationale:** 5 × 3 nested CV is appropriate for N ≈ 273 with min class = 134. Each outer training fold contains ≈ 219 samples; each inner training fold ≈ 146. This is tight but workable. Fold counts are automatically reduced if class size is insufficient (see `nested_cv._choose_fold_count()`).
-
-**Patient-aware splitting:** No repeated samples from the same patient were identified in GSE63061. If repeated samples existed, `StratifiedGroupKFold` would be used (supported in `nested_cv.run_nested_cv(groups=...)`).
-
-**Fixed seeds:** Outer CV uses `random_state=42`, inner CV uses `random_state=43`. All random components are seeded.
-
----
-
-## 6. Evaluation Metrics
-
-All metrics are computed on **out-of-fold (OOF) predictions** only. The `evaluation_source` field in all JSON/CSV outputs is `"cv_oof"`.
-
-| Metric | Definition |
-|---|---|
-| ROC-AUC | Probability that a randomly chosen AD case scores higher than a control |
-| Sensitivity (Recall) | TP / (TP + FN) — proportion of AD cases correctly identified |
-| Specificity | TN / (TN + FP) — proportion of controls correctly identified |
-| Precision (PPV) | TP / (TP + FP) — among predicted AD, true AD fraction |
-| F1 | Harmonic mean of precision and recall |
-| Balanced accuracy | (Sensitivity + Specificity) / 2 |
-| Brier score | Mean squared calibration error (lower = better calibrated) |
-| 95% CI for AUC | Stratified bootstrap (N=1,000 resamples, seed=42) |
-| Confusion matrix | TN, FP, FN, TP counts at Youden-optimal threshold |
-
-**Threshold selection:** The Youden-optimal threshold (maximising Sensitivity + Specificity − 1) is computed from OOF ROC curve only. It is **never** selected using held-out external labels.
-
-> **Accuracy is not reported as a standalone metric.** With mild class imbalance, accuracy is misleading. Balanced accuracy and AUC are the primary discrimination summaries.
-
----
-
-## 7. OOF Metric Results
-
-The table below summarizes the verified out-of-fold (`cv_oof`) performance metrics from the 5x3 nested cross-validation pipeline across all feature sets and models (from `outputs/tables/stage15/nested_cv_summary.csv`):
-
-| Feature set | Model | AUC (95% CI) | Sensitivity | Specificity | F1 | Balanced Accuracy |
-|---|---|---|---|---|---|---|
-| `age_sex_only` | `logistic_baseline` | 0.599 (0.462–0.737) | 0.867 | 0.333 | 0.684 | 0.600 |
-| `age_sex_only` | `logistic_l1` | 0.605 (0.467–0.737) | 0.900 | 0.333 | 0.701 | 0.617 |
-| `age_sex_only` | `elastic_net` | 0.611 (0.467–0.746) | 0.900 | 0.333 | 0.701 | 0.617 |
-| `age_sex_only` | `random_forest` | 0.659 (0.513–0.786) | 0.833 | 0.600 | 0.746 | 0.717 |
-| `age_sex_only` | `rbf_svm` | 0.452 (0.316–0.603) | 0.033 | 1.000 | 0.065 | 0.517 |
-| `lncrna_only` | `logistic_baseline` | 0.797 (0.680–0.898) | 1.000 | 0.500 | 0.800 | 0.750 |
-| `lncrna_only` | `logistic_l1` | 0.817 (0.701–0.917) | 0.833 | 0.767 | 0.806 | 0.800 |
-| `lncrna_only` | `elastic_net` | 0.798 (0.678–0.896) | 0.767 | 0.800 | 0.780 | 0.783 |
-| `lncrna_only` | `random_forest` | 0.892 (0.794–0.968) | 0.833 | 0.900 | 0.862 | 0.867 |
-| `lncrna_only` | `rbf_svm` | 0.634 (0.491–0.767) | 0.767 | 0.567 | 0.697 | 0.667 |
-| `combined` | `logistic_baseline` | 0.767 (0.640–0.874) | 0.667 | 0.767 | 0.702 | 0.717 |
-| `combined` | `logistic_l1` | 0.808 (0.686–0.911) | 0.833 | 0.733 | 0.794 | 0.783 |
-| `combined` | `elastic_net` | 0.788 (0.661–0.894) | 0.767 | 0.767 | 0.767 | 0.767 |
-| `combined` | `random_forest` | 0.888 (0.787–0.961) | 0.767 | 0.933 | 0.836 | 0.850 |
-| `combined` | `rbf_svm` | 0.708 (0.567–0.828) | 0.800 | 0.633 | 0.738 | 0.717 |
-
-*Note on verification: The values above reflect end-to-end dry run verification benchmarking the full feature-set comparison protocol. As required by project safeguards, final non-simulated numbers await integration of the full GSE63061 data package from the feature-engineering contributor.*
-
----
-
-## 8. Figure Inventory
-
-| File | Contents |
-|---|---|
-| `outputs/figures/stage15/roc_lncrna_only.png` | Overlaid OOF ROC curves for all 5 models on lncRNA-only features |
-| `outputs/figures/stage15/roc_age_sex_only.png` | ROC for demographic baseline |
-| `outputs/figures/stage15/roc_combined.png` | ROC for combined model |
-| `outputs/figures/stage15/confusion_{model}_lncrna_only.png` | Per-model confusion matrix |
-| `outputs/figures/stage15/calibration_lncrna_only.png` | Reliability diagrams for all lncRNA models |
-| `outputs/figures/stage15/bootstrap_auc_ci.png` | AUC with 95% CI bar plot |
-
----
-
-## 9. Scientific Safeguards
-
-### 9.1 Leakage prevention
-- All transformers (`SimpleImputer`, `StandardScaler`, `SelectKBest`) are inside `sklearn.Pipeline` and fitted exclusively on training fold data.
-- OOF probabilities are assembled from held-out folds.
-- No external outcome labels (GSE140829) are accessed.
-
-### 9.2 Feature selection boundary
-- Discovery DE results (Stage 11) are **not used** as a feature pre-filter for ML. Any such use inside nested CV would constitute leakage through the whole-dataset DE analysis.
-- Feature selection (L1 regularisation or SelectKBest) happens **inside each training fold**.
-
-### 9.3 Transparent negative reporting
-If AUC is near 0.5 for all models:
-- This is consistent with Stage 11 results showing no pre-specified blood replication.
-- The result will be reported transparently, without modifying the evaluation protocol to obtain a higher score.
-- Investigators should consider: probe-level measurement noise, small sample size, age/sex confounding, cell-composition effects, and inadequate lncRNA coverage on the microarray platform.
-
-### 9.4 Single use of external holdout
-GSE140829 is a one-time-only evaluation to be conducted in a future stage (Gate E), after model freezing. It has not been accessed here.
-
----
-
-## 10. Incremental Value Assessment
-
-The combined (lncRNA + demographics) model vs. age/sex-only model comparison quantifies whether lncRNA expression adds discriminative value beyond demographics. Given that:
-- Age strongly correlates with AD in this cohort
-- Sex affects XIST expression (a prominent microarray gene)
-- The demographic baseline may itself achieve moderate AUC
-
-If the lncRNA-only or combined model does not substantially improve over age/sex-only, this is a valid negative scientific result.
-
----
-
-## 11. Limitations
-
-1. **Weak biological signal:** Blood microarray probes have uncertain lncRNA specificity; probe sequences may cross-hybridise. Stage 10 annotation is computational, not qRT-PCR validated.
-2. **Small sample size:** 273 binary-classified samples yield unstable feature selection across folds (high variance in which probes are selected).
-3. **No pre-specified replication in blood:** Stage 11 found zero replicated blood biomarkers at the pre-declared threshold.
-4. **Missing covariates:** Batch, RIN, and cell composition are not available as covariates for ML.
-5. **Microarray scale:** Expression values are variance-stabilised and quantile-normalised; actual lncRNA abundance is uncertain.
-6. **Internal CV only:** OOF metrics reflect the discovery cohort; true generalisation requires the sealed external cohort.
-
----
-
-## 12. Output Files
-
-| File | Type | Contents |
-|---|---|---|
-| `outputs/tables/stage15/nested_cv_summary.csv` | CSV | All model × feature-set OOF metrics |
-| `outputs/tables/stage15/oof_{fs}_{model}.csv` | CSV | Sample-level OOF probabilities |
-| `outputs/tables/stage15/fold_tuning_{fs}_{model}.json` | JSON | Per-fold best hyperparameters |
-| `outputs/tables/stage15/bootstrap_ci.json` | JSON | AUC 95% CI per model |
-| `outputs/models/stage15_development_model.joblib` | Joblib | Final fitted development model |
-| `outputs/models/stage15_model_manifest.json` | JSON | Full model freeze manifest |
-| `docs/model_freeze_manifest.md` | Markdown | Human-readable manifest summary |
-
----
-
-## 13. Reproduction Commands
+Run from the project root in the existing Python environment. The analysis reads discovery inputs only. It regenerates the per-sample OOF scores, fold-specific tuning logs, metrics, ROC curves, lncRNA confusion matrices and calibration panels, chip-bootstrap comparison figure and frozen model.
 
 ```powershell
-# From repository root, with venv activated:
-.venv\Scripts\python.exe scripts\ml\model_comparison.py
-
-# Run Stage 15 tests:
-.venv\Scripts\python.exe -m pytest tests\test_stage15_models.py tests\test_stage15_nested_cv.py tests\test_stage15_evaluate.py tests\test_stage15_integrity.py -v
-
-# Compilation check:
-.venv\Scripts\python.exe -m compileall scripts\ml tests -q
+.\.venv\Scripts\python.exe -m scripts.ml.model_comparison
+.\.venv\Scripts\python.exe -m pytest tests -q --tb=short -rs
 ```
 
----
+See the [freeze record](model_freeze_manifest.md) for the full-data refit and input contract.
 
-## 14. Handoff to External Validation (Friend 4)
+## Verification
 
-The following are provided for the external validation stage:
-
-- **Model file:** `outputs/models/stage15_development_model.joblib`  
-  Load with: `import joblib; model = joblib.load("outputs/models/stage15_development_model.joblib")`  
-  Predict with: `proba = model.predict_proba(X_external)[:, 1]`
-
-- **Feature list:** `outputs/models/stage15_model_manifest.json` → field `feature_gene_ids_in_order`  
-  External features must be aligned to these exact gene IDs in this exact order.
-
-- **Preprocessing:** Already inside the model pipeline (impute → scale → model). Do **not** pre-scale the external data externally.
-
-- **External validation protocol:** Use `scripts/ml/evaluate.compute_metrics(y_true, proba, label="external")`. Do **not** tune the threshold on external labels.
-
-> **STOP** — Internal ML evaluation is complete. The external validation cohort (GSE140829) has NOT been unlocked.
+The complete repository suite passed 453 tests with the optional Stage 13 integration checks enabled. Two warnings came from a synthetic small-class test exercising reduced fold counts. The real run used five outer and three inner folds throughout. Verification reproduced the frozen estimator from its recorded parameters, checked the chip partitions and training-only supervised fits, and independently compared the saved predictions, confusion counts, ROC-AUC and PR-AUC for all 15 candidates.
